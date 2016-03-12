@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <group android:checkableBehavior="single">
+
+
+        <item
+            android:id="@+id/nav_home"
+            android:icon="@drawable/ic_menu_download"
+            android:title="Scan" />
+
+        <item
+            android:id="@+id/nav_search"
+            android:icon="@drawable/ic_menu_search"
+            android:title="Search" />
+
+        <item
+            android:id="@+id/nav_budget"
+            android:icon="@drawable/ic_menu_budget"
+            android:title="Budget" />
+        <item
+            android:id="@+id/nav_projection"
+            android:icon="@drawable/ic_menu_projection"
+            android:title="Projection" />
+
+        <item
+            android:id="@+id/nav_awards"
+            android:icon="@drawable/ic_menu_badge"
+            android:title="Awards" />
+        <item
+            android:id="@+id/nav_vouchers"
+            android:icon="@drawable/ic_menu_voucher"
+            android:title="Vouchers" />
+
+
+        <item
+            android:id="@+id/nav_settings"
+            android:icon="@drawable/ic_menu_manage"
+            android:title="Settings" />
+
+    </group>
+
+
+</menu>
