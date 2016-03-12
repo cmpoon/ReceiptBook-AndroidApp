@@ -26,6 +26,11 @@ import android.nfc.*;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import android.util.JsonReader;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
@@ -64,6 +69,26 @@ public class MainActivity extends AppCompatActivity
     }
 
     @Override
+    public void onSaveInstanceState(Bundle savedInstanceState) {
+        // Save the user's current game state
+        savedInstanceState.putString("lastUUID", lastUUID);
+
+        // Always call the superclass so it can save the view hierarchy state
+        super.onSaveInstanceState(savedInstanceState);
+    }
+
+    @Override
+    public void onRestoreInstanceState(Bundle savedInstanceState) {
+        // Always call the superclass so it can restore the view hierarchy
+        super.onRestoreInstanceState(savedInstanceState);
+
+        // Restore state members from saved instance
+        lastUUID = savedInstanceState.getString("lastUUID");
+    }
+
+
+
+    @Override
     public void onResume() {
         super.onResume();
 
@@ -72,6 +97,9 @@ public class MainActivity extends AppCompatActivity
         Intent intent = getIntent();
 
         String str = "Nothing";
+        int id = -1;
+        String vendor = "";
+        double price = -1.0d;
 
         NfcManager manager = (NfcManager) context.getSystemService(Context.NFC_SERVICE);
         NfcAdapter adapter = manager.getDefaultAdapter();
@@ -109,12 +137,20 @@ public class MainActivity extends AppCompatActivity
                         }
                     }
 
-                    int duration = Toast.LENGTH_SHORT;
+                    try {
 
-                    Toast toast = Toast.makeText(context, str, duration);
-                    toast.show();
+                        JSONObject json = new JSONObject(str);
 
-                    link(str);
+                        id = Integer.parseInt(json.optString("id").toString());
+                        str = json.optString("uuid").toString();
+                        vendor = json.optString("vendor").toString();
+                        price = Double.parseDouble(json.optString("price").toString());
+
+                    }catch(JSONException ex){
+                        ex.printStackTrace();
+                    }
+
+                    link(str, vendor, price);
                 }
             } else {
                 //Nothing Detected
@@ -125,7 +161,7 @@ public class MainActivity extends AppCompatActivity
             int duration = Toast.LENGTH_LONG;
 
             Toast toast = Toast.makeText(context, text, duration);
-            toast.show();
+        toast.show();
         }
 
         openHome();
@@ -140,7 +176,11 @@ public class MainActivity extends AppCompatActivity
         }
     }
 
-    public void link(String str) {
+    public void link(String str, String vendor, double price) {
+
+        final String ven = vendor;
+        final double pri = price;
+
 
         if (lastUUID == str){
             return;
@@ -156,12 +196,14 @@ public class MainActivity extends AppCompatActivity
                     @Override
                     public void onResponse(String response) {
 
-                        Context context = getApplicationContext();
+                        openHome(ven, pri);
+
+                       /* Context context = getApplicationContext();
                         CharSequence text = "Scanned Successfully!";
                         int duration = Toast.LENGTH_SHORT;
 
                         Toast toast = Toast.makeText(context, text, duration);
-                        toast.show();
+                        toast.show();*/
                     }
                 },
                 new Response.ErrorListener() {
@@ -255,7 +297,7 @@ public class MainActivity extends AppCompatActivity
         getSupportActionBar().setTitle(title);
     }
 
-    private void openHome() {
+    private void openHome(String vendor, double price) {
         setTitle("Scan");
 
         FragmentManager fm = getFragmentManager();
@@ -269,13 +311,17 @@ public class MainActivity extends AppCompatActivity
         }
 
         //See if the window we are requesting has already been created
-        Fragment newWindow = new ScanFragment();
+        Fragment newWindow = ScanFragment.getInstance(vendor, price);
 
         ft.replace(R.id.fragment_container, newWindow);
         ft.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN);
         ft.addToBackStack(null);
         ft.commit();
 
+    }
+
+    private void openHome() {
+        openHome("",ScanFragment.NOT_SET);
     }
 
 
