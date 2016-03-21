@@ -79,19 +79,17 @@ public class ScanFragment extends Fragment {
         mAction = (TextView) getActivity().findViewById(R.id.action);
         mImg = (ImageView) getActivity().findViewById(R.id.img_action);
 
-        //Show success
-        if (!vendor.isEmpty() && price != LOADING && price != NOT_SET) {
-            mImg.setImageResource(R.drawable.ic_tick);
-            mImg.setAnimation(null);
-            mAction.setText(getString(R.string.result_success));
-            mReceipt.setText(vendor + " - £" + Double.toString(price));
-        } else if (!vendor.isEmpty() && price == FAILED) {
+        boolean reset = false;
+
+        if (!vendor.isEmpty() && price == FAILED) {
+            reset = true;
             //Show failed screen
             mImg.setImageResource(R.drawable.ic_cross);
             mImg.setAnimation(null);
             mAction.setText(getString(R.string.result_failed));
             mReceipt.setText(vendor);
         } else if (!vendor.isEmpty() && price == LOADING) {
+            reset = false;
             //Show loading screen
             RotateAnimation anim = new RotateAnimation(0.0f, 360.0f, Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF, 0.5f);
             anim.setInterpolator(new LinearInterpolator());
@@ -102,7 +100,15 @@ public class ScanFragment extends Fragment {
             mImg.startAnimation(anim);
             mAction.setText(getString(R.string.loading));
             mReceipt.setText(vendor);
+        } else if (!vendor.isEmpty() && price != NOT_SET) {
+            reset = true;
+            //Show success
+            mImg.setImageResource(R.drawable.ic_tick);
+            mImg.setAnimation(null);
+            mAction.setText(getString(R.string.result_success));
+            mReceipt.setText(vendor + " - £" + Double.toString(price));
         } else {
+            reset = false;
             mReceipt.setText("");
             mImg.setAnimation(null);
             mImg.setImageResource(R.drawable.ic_receive);
@@ -110,26 +116,28 @@ public class ScanFragment extends Fragment {
 
         }
 
+        if (reset) {
         /* New Handler to start the Menu-Activity
          * and close this Splash-Screen after some seconds.*/
-        new Handler().postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                //Update screen
-                try {
-                    price = NOT_SET;
-                    vendor = "";
+            new Handler().postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    //Update screen
+                    try {
+                        price = NOT_SET;
+                        vendor = "";
 
-                    mReceipt.setText("");
-                    mImg.setImageResource(R.drawable.ic_receive);
-                    mImg.startAnimation(null);
-                    mAction.setText(getString(R.string.action_scan));
-                } catch (Exception e) {
-                    e.printStackTrace();
+                        mReceipt.setText("");
+                        mAction.setText(getString(R.string.action_scan));
+                        mImg.setImageResource(R.drawable.ic_receive);
+                        mImg.setAnimation(null);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
                 }
-            }
-        }, SUCCESS_DISPLAY_LENGTH);
+            }, SUCCESS_DISPLAY_LENGTH);
 
+        }
     }
 
 }
