@@ -106,7 +106,7 @@ public class ScanFragment extends Fragment {
             mImg.setImageResource(R.drawable.ic_tick);
             mImg.setAnimation(null);
             mAction.setText(getString(R.string.result_success));
-            mReceipt.setText(vendor + " - £" + Double.toString(price));
+            mReceipt.setText(vendor + " - £" + String.format("%.2f", price));
         } else {
             reset = false;
             mReceipt.setText("");

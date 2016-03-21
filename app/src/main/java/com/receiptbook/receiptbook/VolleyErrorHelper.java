@@ -53,7 +53,7 @@ public class VolleyErrorHelper {
                     case 422:
                     case 401:
                         // invalid request
-                        return ((VolleyError) error).getMessage();
+                        return context.getResources().getString(R.string.invalid);
 
                     default:
                         return context.getResources().getString(R.string.timeout);

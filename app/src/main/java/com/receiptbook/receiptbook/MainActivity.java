@@ -5,6 +5,7 @@ import android.app.FragmentManager;
 import android.app.FragmentTransaction;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Parcelable;
 import android.support.design.widget.FloatingActionButton;
@@ -84,9 +85,8 @@ public class MainActivity extends AppCompatActivity
         super.onRestoreInstanceState(savedInstanceState);
 
         // Restore state members from saved instance
-        lastUUID = savedInstanceState.getString("lastUUID");
+        lastUUID = savedInstanceState.getString("lastUUID", "");
     }
-
 
 
     @Override
@@ -97,93 +97,105 @@ public class MainActivity extends AppCompatActivity
         Context context = getApplicationContext();
         Intent intent = getIntent();
 
+        SharedPreferences sharedPref = getPreferences(Context.MODE_PRIVATE);
+        lastUUID = sharedPref.getString("lastUUID", "");
+
         String str = "Nothing";
         int id = -1;
         String vendor = "";
-        double price = -1.0d;
+        double price = ScanFragment.NOT_SET;
         boolean detectedNew = false;
-        boolean detected = false;
 
         NfcManager manager = (NfcManager) context.getSystemService(Context.NFC_SERVICE);
         NfcAdapter adapter = manager.getDefaultAdapter();
-        if (adapter != null && adapter.isEnabled()) {
-            // adapter exists and is enabled.
+        if (adapter == null || !adapter.isEnabled()) {
 
-            if (NfcAdapter.ACTION_NDEF_DISCOVERED.equals(intent.getAction())) {
-                Parcelable[] rawMsgs = intent.getParcelableArrayExtra(NfcAdapter.EXTRA_NDEF_MESSAGES);
-                if (rawMsgs != null) {
-
-
-                    NdefMessage[] msgs = new NdefMessage[rawMsgs.length];
-
-                    for (int i = 0; i < rawMsgs.length; i++) {
-                        msgs[i] = (NdefMessage) rawMsgs[i];
-                        NdefRecord[] records = msgs[i].getRecords();
-
-                        byte[] payload = records[i].getPayload();
-
-
-                        byte status = payload[0];
-                        int enc = status & 0x80; // Bit mask 7th bit 1
-                        String encString = null;
-                        if (enc == 0) {
-                            encString = "UTF-8";
-                        } else {
-                            encString = "UTF-16";
-                        }
-
-                        int ianaLength = status & 0x3F; // Bit mask bit 5..0
-
-                        try {
-                            String content = new String(payload, ianaLength + 1, payload.length - 1 - ianaLength, encString);
-                            str = content;
-                        } catch (Throwable t) {
-                            t.printStackTrace();
-                        }
-                    }
-
-
-                    try {
-                        detected = true;
-
-                        JSONObject json = new JSONObject(str);
-
-                        id = Integer.parseInt(json.optString("id"));
-                        str = json.optString("uuid");
-                        vendor = json.optString("vendor");
-                        price = Double.parseDouble(json.optString("price"));
-
-                        detectedNew = lastUUID != str ;
-
-                        link(str, vendor, price);
-                    }catch(JSONException ex){
-                        ex.printStackTrace();
-                        CharSequence text = "Receipt not valid!";
-                        int duration = Toast.LENGTH_LONG;
-
-                        Toast toast = Toast.makeText(context, text, duration);
-                        toast.show();
-                    }
-
-                }
-            } else {
-                //Nothing Detected
-            }
-
-        } else {
             CharSequence text = "Please enable NFC!";
             int duration = Toast.LENGTH_LONG;
 
             Toast toast = Toast.makeText(context, text, duration);
             toast.show();
+
+            openHome("Please Enable NFC", ScanFragment.FAILED);
+
+            return;
         }
 
-        if (detectedNew) {
-            openHome(vendor, ScanFragment.LOADING);
-        }else if (detected){
-            openHome(vendor, price);
 
-        }else {
+        // adapter exists and is enabled.
+
+        if (NfcAdapter.ACTION_NDEF_DISCOVERED.equals(intent.getAction())) {
+            //Message recieved
+            Parcelable[] rawMsgs = intent.getParcelableArrayExtra(NfcAdapter.EXTRA_NDEF_MESSAGES);
+            if (rawMsgs != null) {
+
+
+                NdefMessage[] msgs = new NdefMessage[rawMsgs.length];
+
+                for (int i = 0; i < rawMsgs.length; i++) {
+                    msgs[i] = (NdefMessage) rawMsgs[i];
+                    NdefRecord[] records = msgs[i].getRecords();
+
+                    byte[] payload = records[i].getPayload();
+
+
+                    byte status = payload[0];
+                    int enc = status & 0x80; // Bit mask 7th bit 1
+                    String encString = null;
+                    if (enc == 0) {
+                        encString = "UTF-8";
+                    } else {
+                        encString = "UTF-16";
+                    }
+
+                    int ianaLength = status & 0x3F; // Bit mask bit 5..0
+
+                    try {
+                        String content = new String(payload, ianaLength + 1, payload.length - 1 - ianaLength, encString);
+                        str = content;
+                    } catch (Throwable t) {
+                        t.printStackTrace();
+                    }
+                }
+
+
+                try {
+
+                    JSONObject json = new JSONObject(str);
+
+                    id = Integer.parseInt(json.optString("id"));
+                    str = json.optString("uuid");
+                    vendor = json.optString("vendor");
+                    price = Double.parseDouble(json.optString("price"));
+
+                    detectedNew = !lastUUID.equals(str);
+                    if (detectedNew) {
+                        link(str, vendor, price);
+                    }
+                } catch (JSONException ex) {
+                    ex.printStackTrace();
+                    CharSequence text = "Receipt not valid!";
+                    int duration = Toast.LENGTH_LONG;
+
+                    Toast toast = Toast.makeText(context, text, duration);
+                    toast.show();
+
+
+                    openHome("Invalid Receipt", ScanFragment.FAILED);
+                    return;
+                }
+
+
+            }
+
+            if (detectedNew) {
+                openHome(vendor, ScanFragment.LOADING);
+            } else {
+                openHome(vendor, price);
+            }
+
+        } else {
+            //Nothing detected
             openHome();
         }
     }
@@ -201,13 +213,13 @@ public class MainActivity extends AppCompatActivity
 
         final String ven = vendor;
         final double pri = price;
+        final String uuid = str;
 
 
-        if (lastUUID == str){
+        if (lastUUID.equals(str)) {
             return;
         }
 
-        lastUUID = str;
 
         queue = Volley.newRequestQueue(this);
         String url = BASE_URL + "/link?userid=1&uuid=" + str;
@@ -216,6 +228,14 @@ public class MainActivity extends AppCompatActivity
                 new Response.Listener<String>() {
                     @Override
                     public void onResponse(String response) {
+
+                        //Only update if successful
+                        lastUUID = uuid;
+
+                        SharedPreferences sharedPref = getPreferences(Context.MODE_PRIVATE);
+                        SharedPreferences.Editor editor = sharedPref.edit();
+                        editor.putString("lastUUID", lastUUID);
+                        editor.commit();
 
                         openHome(ven, pri);
 
@@ -236,7 +256,7 @@ public class MainActivity extends AppCompatActivity
 
                         openHome(ven, ScanFragment.FAILED);
 
-                        CharSequence text = "Error: "+ errMsg;
+                        CharSequence text = "Error: " + errMsg;
                         int duration = Toast.LENGTH_SHORT;
 
                         Toast toast = Toast.makeText(context, text, duration);
@@ -343,7 +363,7 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void openHome() {
-        openHome("",ScanFragment.NOT_SET);
+        openHome("", ScanFragment.NOT_SET);
     }
 
 

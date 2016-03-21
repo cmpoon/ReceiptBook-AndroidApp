@@ -6,10 +6,51 @@
 
     <string name="action_scan">Scan Now</string>
     <string name="result_success">Receipt Saved</string>
-    <string name="result_failed">Transfer Error</string>
+    <string name="result_failed">Error Occured</string>
     <string name="loading">One Moment...</string>
+    <string name="invalid">Invalid Receipt</string>
     <string name="timeout">Slow Connection</string>
     <string name="nointernet">No Connection</string>
     <string name="generic_error">Server Error</string>
+
+
+    <string name="offlineMessageHtml"><![CDATA[
+<!DOCTYPE HTML><html>
+<head>
+<title>Error</title>
+<style>
+html, body, h1, h2, p{
+font-family: sans-serif;
+color: #fff;
+}
+</style>
+</head>
+<body>
+<h1>Ooops</h1>
+<h2>You are Offline!</h2>
+<p>Please ensure you have a working data connection so I could connect to the ReceiptBook server.</p>
+
+<p>-The ReceiptBook Wizard</p>
+</body>
+</html>]]></string>
+    <string name="timeoutMessageHtml"><![CDATA[
+<html>
+<head>
+<title>Error</title>
+<style>
+html, body, h1, h2, p{
+font-family: sans-serif;
+color: #fff;
+}
+</style>
+</head>
+<body>
+<h1>Ooops</h1>
+<h2>Temporarily Unavailable</h2>
+<p>Please try loading the page again! I am just having some personal issues at the moment.</p>
+
+<p>-The ReceiptBook Wizard</p>
+</body>
+</html>]]></string>
 
 </resources>
