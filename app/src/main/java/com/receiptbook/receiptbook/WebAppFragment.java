@@ -106,10 +106,10 @@ public class WebAppFragment extends WebViewFragment {
                     @Override
                     public void onReceivedError(WebView view, int errorCode,
                                                 String description, String failingUrl) {
-                        if (errorCode == ERROR_TIMEOUT) {
+                        if (errorCode == ERROR_TIMEOUT || errorCode == ERROR_CONNECT || errorCode == ERROR_IO) {
                             view.stopLoading();  // may not be needed
                             view.loadData(getString(R.string.timeoutMessageHtml), "text/html", "utf-8");
-                        } else if (errorCode == ERROR_HOST_LOOKUP || errorCode == ERROR_CONNECT || errorCode == ERROR_IO){
+                        } else if (errorCode == ERROR_HOST_LOOKUP ){
 
                             view.stopLoading();  // may not be needed
                             view.loadData(getString(R.string.offlineMessageHtml), "text/html", "utf-8");
