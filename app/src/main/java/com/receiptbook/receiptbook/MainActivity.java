@@ -37,6 +37,7 @@ public class MainActivity extends AppCompatActivity
 
 
     public static String lastUUID = "";
+    public static String BASE_URL = "http://receiptbook.dreeemteam.co.uk";
     public static final String TAG = "RB";
     private RequestQueue queue;
 
@@ -100,6 +101,8 @@ public class MainActivity extends AppCompatActivity
         int id = -1;
         String vendor = "";
         double price = -1.0d;
+        boolean detectedNew = false;
+        boolean detected = false;
 
         NfcManager manager = (NfcManager) context.getSystemService(Context.NFC_SERVICE);
         NfcAdapter adapter = manager.getDefaultAdapter();
@@ -109,6 +112,8 @@ public class MainActivity extends AppCompatActivity
             if (NfcAdapter.ACTION_NDEF_DISCOVERED.equals(intent.getAction())) {
                 Parcelable[] rawMsgs = intent.getParcelableArrayExtra(NfcAdapter.EXTRA_NDEF_MESSAGES);
                 if (rawMsgs != null) {
+
+
                     NdefMessage[] msgs = new NdefMessage[rawMsgs.length];
 
                     for (int i = 0; i < rawMsgs.length; i++) {
@@ -137,20 +142,29 @@ public class MainActivity extends AppCompatActivity
                         }
                     }
 
+
                     try {
+                        detected = true;
 
                         JSONObject json = new JSONObject(str);
 
-                        id = Integer.parseInt(json.optString("id").toString());
-                        str = json.optString("uuid").toString();
-                        vendor = json.optString("vendor").toString();
-                        price = Double.parseDouble(json.optString("price").toString());
+                        id = Integer.parseInt(json.optString("id"));
+                        str = json.optString("uuid");
+                        vendor = json.optString("vendor");
+                        price = Double.parseDouble(json.optString("price"));
 
+                        detectedNew = lastUUID != str ;
+
+                        link(str, vendor, price);
                     }catch(JSONException ex){
                         ex.printStackTrace();
+                        CharSequence text = "Receipt not valid!";
+                        int duration = Toast.LENGTH_LONG;
+
+                        Toast toast = Toast.makeText(context, text, duration);
+                        toast.show();
                     }
 
-                    link(str, vendor, price);
                 }
             } else {
                 //Nothing Detected
@@ -161,10 +175,17 @@ public class MainActivity extends AppCompatActivity
             int duration = Toast.LENGTH_LONG;
 
             Toast toast = Toast.makeText(context, text, duration);
-        toast.show();
+            toast.show();
         }
 
-        openHome();
+        if (detectedNew) {
+            openHome(vendor, ScanFragment.LOADING);
+        }else if (detected){
+            openHome(vendor, price);
+
+        }else {
+            openHome();
+        }
     }
 
 
@@ -189,7 +210,7 @@ public class MainActivity extends AppCompatActivity
         lastUUID = str;
 
         queue = Volley.newRequestQueue(this);
-        String url = "http://proj.dreeemteam.co.uk/link?userid=1&uuid=" + str;
+        String url = BASE_URL + "/link?userid=1&uuid=" + str;
 
         StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
                 new Response.Listener<String>() {
@@ -211,7 +232,11 @@ public class MainActivity extends AppCompatActivity
                     public void onErrorResponse(VolleyError error) {
 
                         Context context = getApplicationContext();
-                        CharSequence text = "Network Failure: " + error.getMessage();
+                        String errMsg = VolleyErrorHelper.getMessage(error, context);
+
+                        openHome(ven, ScanFragment.FAILED);
+
+                        CharSequence text = "Error: "+ errMsg;
                         int duration = Toast.LENGTH_SHORT;
 
                         Toast toast = Toast.makeText(context, text, duration);
@@ -277,11 +302,8 @@ public class MainActivity extends AppCompatActivity
             openWeb("/awards");
         } else if (id == R.id.nav_vouchers) {
             setTitle("Vouchers");
-            openWeb("/ni");
+            openWeb("/vouchers");
 
-        } else if (id == R.id.nav_settings) {
-            setTitle("Settings");
-            openWeb("/ni");
         }
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
@@ -326,7 +348,7 @@ public class MainActivity extends AppCompatActivity
 
 
     private void openWeb(String url) {
-        url = "http://proj.dreeemteam.co.uk" + url;
+        url = BASE_URL + url;
 
         FragmentManager fm = getFragmentManager();
         FragmentTransaction ft = fm.beginTransaction();

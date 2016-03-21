@@ -6,7 +6,10 @@
 
     <string name="action_scan">Scan Now</string>
     <string name="result_success">Receipt Saved</string>
+    <string name="result_failed">Transfer Error</string>
+    <string name="loading">One Moment...</string>
+    <string name="timeout">Slow Connection</string>
+    <string name="nointernet">No Connection</string>
+    <string name="generic_error">Server Error</string>
 
-    <!-- TODO: Remove or change this placeholder text -->
-    <string name="hello_blank_fragment">Hello blank fragment</string>
 </resources>

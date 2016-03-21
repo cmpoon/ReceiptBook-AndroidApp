@@ -9,6 +9,10 @@ import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
+import android.view.animation.LinearInterpolator;
+import android.view.animation.RotateAnimation;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -21,6 +25,8 @@ public class ScanFragment extends Fragment {
 
     private final int SUCCESS_DISPLAY_LENGTH = 5000;
     public static final double NOT_SET = -1.0d;
+    public static final double LOADING = -0.5d;
+    public static final double FAILED = -2.0d;
 
     private static String vendor = "";
     private static double price = NOT_SET;
@@ -55,7 +61,7 @@ public class ScanFragment extends Fragment {
         try {
             vendor = getArguments().getString("vendor");
             price = getArguments().getDouble("price");
-        }catch(Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
             vendor = "";
             price = NOT_SET;
@@ -74,14 +80,34 @@ public class ScanFragment extends Fragment {
         mImg = (ImageView) getActivity().findViewById(R.id.img_action);
 
         //Show success
-        if (!vendor.isEmpty() && price != NOT_SET) {
+        if (!vendor.isEmpty() && price != LOADING && price != NOT_SET) {
             mImg.setImageResource(R.drawable.ic_tick);
+            mImg.setAnimation(null);
             mAction.setText(getString(R.string.result_success));
             mReceipt.setText(vendor + " - £" + Double.toString(price));
+        } else if (!vendor.isEmpty() && price == FAILED) {
+            //Show failed screen
+            mImg.setImageResource(R.drawable.ic_cross);
+            mImg.setAnimation(null);
+            mAction.setText(getString(R.string.result_failed));
+            mReceipt.setText(vendor);
+        } else if (!vendor.isEmpty() && price == LOADING) {
+            //Show loading screen
+            RotateAnimation anim = new RotateAnimation(0.0f, 360.0f, Animation.RELATIVE_TO_SELF, 0.5f, Animation.RELATIVE_TO_SELF, 0.5f);
+            anim.setInterpolator(new LinearInterpolator());
+            anim.setRepeatCount(Animation.INFINITE);
+            anim.setDuration(700);
+
+            mImg.setImageResource(R.drawable.ic_load);
+            mImg.startAnimation(anim);
+            mAction.setText(getString(R.string.loading));
+            mReceipt.setText(vendor);
         } else {
             mReceipt.setText("");
+            mImg.setAnimation(null);
             mImg.setImageResource(R.drawable.ic_receive);
             mAction.setText(getString(R.string.action_scan));
+
         }
 
         /* New Handler to start the Menu-Activity
@@ -96,6 +122,7 @@ public class ScanFragment extends Fragment {
 
                     mReceipt.setText("");
                     mImg.setImageResource(R.drawable.ic_receive);
+                    mImg.startAnimation(null);
                     mAction.setText(getString(R.string.action_scan));
                 } catch (Exception e) {
                     e.printStackTrace();
