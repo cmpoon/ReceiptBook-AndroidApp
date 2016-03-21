@@ -111,7 +111,7 @@ public class ScanFragment extends Fragment {
             reset = false;
             mReceipt.setText("");
             mImg.setAnimation(null);
-            mImg.setImageResource(R.drawable.ic_receive);
+            mImg.setImageResource(R.drawable.ic_book);
             mAction.setText(getString(R.string.action_scan));
 
         }
